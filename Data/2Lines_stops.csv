@@ -1,0 +1,5 @@
+stop_id,change_time,name,lon,lat
+0,0,O,40,100
+1,120,A,75,75
+2,0,B,100,50
+3,0,D,125,75
