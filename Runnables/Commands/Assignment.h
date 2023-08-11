@@ -20,28 +20,22 @@ public:
         ParameterizedCommand(shell, "parseCSAFromCSV", "Parses raw .csv files containing a CSA network and converts it to a binary representation.") {
         addParameter("Input directory");
         addParameter("Output file");
-        addParameter("Parse zones?", "false");
-        addParameter("Make bidirectional?", "true");
-        addParameter("Repair files?", "false");
+        addParameter("Make transfers bidirectional?", "false");
+        addParameter("Repair files?", "true");
     }
 
     virtual void execute() noexcept {
         const std::string csvDirectory = getParameter("Input directory");
-        const bool parseZones = getParameter<bool>("Parse zones?");
-        const bool makeBidirectional = getParameter<bool>("Make bidirectional?");
+        const bool makeBidirectional = getParameter<bool>("Make transfers bidirectional?");
         const bool repairFiles = getParameter<bool>("Repair files?");
 
         if (repairFiles) {
             CSA::Data::RepairFiles(csvDirectory);
         }
-        if (parseZones) {
-            if (makeBidirectional) {
-                parseData(CSA::Data::FromCSVwithZones<false>(csvDirectory));
-            } else {
-                parseData(CSA::Data::FromCSVwithZones<true>(csvDirectory));
-            }
+        if (makeBidirectional) {
+            parseData(CSA::Data::FromCSVwithZones<false>(csvDirectory));
         } else {
-            parseData(CSA::Data::FromCSV(csvDirectory));
+            parseData(CSA::Data::FromCSVwithZones<true>(csvDirectory));
         }
     }
 
@@ -58,7 +52,7 @@ class GroupAssignment : public ParameterizedCommand {
 
 public:
     GroupAssignment(BasicShell& shell) :
-        ParameterizedCommand(shell, "groupAssignment", "Computes a public transit traffic assignment for zone based demand.",  "Num threads:", "    positive number  - parallel execution with <Num threads> threads", "    otherwise        - sequential execution") {
+        ParameterizedCommand(shell, "groupAssignment", "Computes a transit assignment for zone-based demand.",  "Num threads:", "    >0  - parallel execution with <Num threads> threads", "    =0        - sequential execution") {
         addParameter("Settings file");
         addParameter("CSA binary");
         addParameter("Demand file");
@@ -66,8 +60,6 @@ public:
         addParameter("Demand multiplier", "1");
         addParameter("Num threads", "0");
         addParameter("Thread offset", "1");
-        addParameter("Aggregate file", "-");
-        addParameter("Aggregate prefix", "-");
         addParameter("Use transfer buffer times", "false");
         addParameter("Demand output file", "-");
         addParameter("Demand output size", "-1");
@@ -140,8 +132,6 @@ private:
         const size_t demandMultiplier = getParameter<size_t>("Demand multiplier");
         const int numThreads = getParameter<int>("Num threads");
         const int pinMultiplier = getParameter<int>("Thread offset");
-        const std::string aggregateFileName = getParameter("Aggregate file");
-        const std::string aggregatePrefix = getParameter("Aggregate prefix");
         const std::string demandOutputFileName = getParameter("Demand output file");
         const size_t demandOutputSize = getParameter<size_t>("Demand output size");
 
@@ -189,8 +179,5 @@ private:
         ma.writeAssignment(FileSystem::ensureExtension(outputFileName, "_assignment.csv"));
         ma.writeGroups(FileSystem::ensureExtension(outputFileName, "_groups.csv"));
         ma.writeAssignedJourneys(FileSystem::ensureExtension(outputFileName, "_journeys.csv"), demand);
-        if (aggregateFileName != "-") {
-            ma.writeConnectionStatistics(aggregateFileName, aggregatePrefix);
-        }
     }
 };
